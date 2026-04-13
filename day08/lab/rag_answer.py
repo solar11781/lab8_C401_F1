@@ -24,6 +24,7 @@ Definition of Done Sprint 3:
 import os
 from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
+from sentence_transformers import CrossEncoder
 
 load_dotenv()
 
@@ -199,6 +200,7 @@ def retrieve_hybrid(
 # Cross-encoder để chấm lại relevance sau search rộng
 # =============================================================================
 
+rerank_model = CrossEncoder("cross-encoder/ms-marco-MiniLM-L-6-v2")
 def rerank(
     query: str,
     candidates: List[Dict[str, Any]],
@@ -230,8 +232,41 @@ def rerank(
     - Muốn chắc chắn chỉ 3-5 chunk tốt nhất vào prompt
     """
     # TODO Sprint 3: Implement rerank
-    # Tạm thời trả về top_k đầu tiên (không rerank)
-    return candidates[:top_k]
+    if not candidates:
+        return []
+    
+    # Option A — Cross-encoder (use a CrossEncoder model to score each (query, passage) pair)
+    pairs = [[query, chunk.get("text", "")] for chunk in candidates]
+    scores = rerank_model.predict(pairs)
+
+    ranked = sorted(
+        zip(candidates, scores),
+        key=lambda x: x[1],
+        reverse=True
+    )
+    return [chunk for chunk, _ in ranked[:top_k]]
+
+    # Option B — LLM-based rerank
+    # import json
+    # prompt_lines = [
+    #     "You are a relevance rater. Given a query and a list of passages, return a JSON array of relevance scores (floats between 0 and 1) corresponding to each passage in the SAME ORDER.",
+    #     f"Query: {query}",
+    #     "Passages:"
+    # ]
+    # for i, c in enumerate(candidates, 1):
+    #     text = c.get("text", "").strip()
+    #     prompt_lines.append(f"[{i}] {text}")
+    # prompt = "\n\n".join(prompt_lines)
+    # response = call_llm(prompt)
+    # # Expect response like: [0.1, 0.9, 0.3]
+    # scores = json.loads(response)
+    # scored = []
+    # for c, s in zip(candidates, scores):
+    #     c_copy = dict(c)
+    #     c_copy["score"] = float(s)
+    #     scored.append(c_copy)
+    # scored_sorted = sorted(scored, key=lambda x: x["score"], reverse=True)
+    # return scored_sorted[:top_k]
 
 
 # =============================================================================
@@ -265,8 +300,27 @@ def transform_query(query: str, strategy: str = "expansion") -> List[str]:
     - HyDE: query mơ hồ, search theo nghĩa không hiệu quả
     """
     # TODO Sprint 3: Implement query transformation
-    # Tạm thời trả về query gốc
-    return [query]
+    import json
+
+    if strategy == "expansion":
+        prompt = f"""Given the query: '{query}'
+        Generate 2-3 alternative phrasings or related terms in Vietnamese.
+        Output a JSON array of strings only, for example: ["alt1", "alt2"].
+        Do not add any extra explanation or text."""
+    elif strategy == "decomposition":
+        prompt = f"""Break down this complex query into 2-3 simpler sub-queries in Vietnamese: '{query}'
+        Output a JSON array of strings only, for example: ["sub1", "sub2"].
+        Do not add any extra explanation or text."""
+    elif strategy == "hyde":
+        prompt = f"""Generate a concise hypothetical supporting document or short answer for the query '{query}' in Vietnamese.
+        Treat the output as a short document suitable for embedding.
+        Output a JSON array with a single string (the hypothetical document), for example: ["..."]
+        Do not add any extra explanation or text."""
+    else:
+        raise ValueError(f"Unknown strategy: {strategy}")
+
+    response = call_llm(prompt)
+    return json.loads(response)
 
 
 # =============================================================================
