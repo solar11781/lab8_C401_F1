@@ -18,7 +18,7 @@
 ```
 
 **Mô tả ngắn gọn:**
-> TODO: Mô tả hệ thống trong 2-3 câu. Nhóm xây gì? Cho ai dùng? Giải quyết vấn đề gì?
+> Chatbot RAG giúp nhân viên công ty trả lời câu hỏi liên quan đến chính sách, quy trình dựa trên tài liệu nội bộ. Hệ thống gồm pipeline indexing để xử lý tài liệu và pipeline retrieval để tìm kiếm và tạo câu trả lời có trích dẫn nguồn.
 
 ---
 
@@ -27,22 +27,22 @@
 ### Tài liệu được index
 | File | Nguồn | Department | Số chunk |
 |------|-------|-----------|---------|
-| `policy_refund_v4.txt` | policy/refund-v4.pdf | CS | TODO |
-| `sla_p1_2026.txt` | support/sla-p1-2026.pdf | IT | TODO |
-| `access_control_sop.txt` | it/access-control-sop.md | IT Security | TODO |
-| `it_helpdesk_faq.txt` | support/helpdesk-faq.md | IT | TODO |
-| `hr_leave_policy.txt` | hr/leave-policy-2026.pdf | HR | TODO |
+| `policy_refund_v4.txt` | policy/refund-v4.pdf | CS | 6 |
+| `sla_p1_2026.txt` | support/sla-p1-2026.pdf | IT | 5 |
+| `access_control_sop.txt` | it/access-control-sop.md | IT Security | 8 |
+| `it_helpdesk_faq.txt` | support/helpdesk-faq.md | IT | 6 |
+| `hr_leave_policy.txt` | hr/leave-policy-2026.pdf | HR | 5 |
 
 ### Quyết định chunking
 | Tham số | Giá trị | Lý do |
 |---------|---------|-------|
-| Chunk size | TODO tokens | TODO |
-| Overlap | TODO tokens | TODO |
-| Chunking strategy | Heading-based / paragraph-based | TODO |
+| Chunk size | 400 | Để đảm bảo mỗi chunk chứa đủ thông tin nhưng không quá dài |
+| Overlap | 80 | Để giữ lại thông tin liên quan giữa các chunk |
+| Chunking strategy | Heading-based | Tài liệu có cấu trúc rõ ràng, chia section cụ thể |
 | Metadata fields | source, section, effective_date, department, access | Phục vụ filter, freshness, citation |
 
 ### Embedding model
-- **Model**: TODO (OpenAI text-embedding-3-small / paraphrase-multilingual-MiniLM-L12-v2)
+- **Model**: OpenAI text-embedding-3-small
 - **Vector store**: ChromaDB (PersistentClient)
 - **Similarity metric**: Cosine
 
@@ -61,16 +61,18 @@
 ### Variant (Sprint 3)
 | Tham số | Giá trị | Thay đổi so với baseline |
 |---------|---------|------------------------|
-| Strategy | TODO (hybrid / dense) | TODO |
-| Top-k search | TODO | TODO |
-| Top-k select | TODO | TODO |
-| Rerank | TODO (cross-encoder / MMR) | TODO |
-| Query transform | TODO (expansion / HyDE / decomposition) | TODO |
+| Strategy | hybrid | Kết hợp dense và sparse sử dụng thuật toán RRF |
+| Top-k search | 10 | Không đổi |
+| Top-k select | 3 | Không đổi |
+| Rerank | cross-encoder | Sử dụng mô hình Cross-encoder (ms-marco-MiniLM-L-6-v2) để chấm điểm lại top 10 trước khi lọc ra top 3. |
+| Query transform | Không | Không đổi (Tập trung tối ưu Retriever và Reranker trong Sprint này). |
 
 **Lý do chọn variant này:**
 > TODO: Giải thích tại sao chọn biến này để tune.
 > Ví dụ: "Chọn hybrid vì corpus có cả câu tự nhiên (policy) lẫn mã lỗi và tên chuyên ngành (SLA ticket P1, ERR-403)."
+> Chọn Hybrid Search (Dense + Sparse) vì tài liệu nội bộ chứa đựng ngôn ngữ tự nhiên lẫn các thuật ngữ chuyên môn. Dense Retrieval giúp bắt được ngữ nghĩa, trong khi Sparse Retrieval (BM25) có thể bắt được các keyword quan trọng mà embedding có thể bỏ qua. Reranking bằng Cross-encoder giúp cải thiện độ chính xác của kết quả cuối cùng bằng cách đánh giá lại mức độ liên quan của từng candidate dựa trên query cụ thể.
 
+> Bổ sung Cross-encoder vào pipeline giúp tăng khả năng phân biệt giữa các candidate có điểm embedding tương tự nhưng mức độ liên quan khác nhau. Điều này đặc biệt hữu ích khi top-k search trả về nhiều candidate có điểm số gần nhau, giúp cải thiện chất lượng câu trả lời cuối cùng.
 ---
 
 ## 4. Generation (Sprint 2)
@@ -96,8 +98,8 @@ Answer:
 ### LLM Configuration
 | Tham số | Giá trị |
 |---------|---------|
-| Model | TODO (gpt-4o-mini / gemini-1.5-flash) |
-| Temperature | 0 (để output ổn định cho eval) |
+| Model | gpt-4o-mini |
+| Temperature | 0 |
 | Max tokens | 512 |
 
 ---
