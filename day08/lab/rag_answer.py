@@ -25,7 +25,6 @@ import os
 from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
 from sentence_transformers import CrossEncoder
-from google import genai
 
 load_dotenv()
 
@@ -401,7 +400,7 @@ def build_context_block(chunks: List[Dict[str, Any]]) -> str:
         text = chunk.get("text", "")
 
         header = f"SOURCE: {source} | SECTION: {section} | DATE: {eff_date}"
-        context_parts.append(f"{header}\n{text}")
+        context_parts.append(f"Tài liệu {i}:\n{header}\n{text}")
 
     return "\n\n".join(context_parts)
 
@@ -411,22 +410,42 @@ def build_grounded_prompt(query: str, context_block: str) -> str:
     Xây dựng grounded prompt tối ưu:
     - Evidence-only, Citation, Concise, Abstain, Language Match.
     """
-    prompt = f"""Answer the question using ONLY the provided Context below.
+    prompt = f"""Bạn là một AI Agent hỗ trợ CS Helpdesk và IT chuyên nghiệp, tận tâm. 
+Nhiệm vụ của bạn là trả lời câu hỏi của người dùng DỰA VÀO DUY NHẤT Dữ liệu ngữ cảnh (Context) được cung cấp.
 
-REQUIREMENTS:
-1. EVIDENCE-ONLY: Chỉ lấy thông tin từ Context. Tuyệt đối không dùng kiến thức ngoài hoặc tự bịa thông tin.
-2. CITATION: Phải trích dẫn nguồn trực tiếp ngay sau mỗi thông tin quan trọng bằng định dạng [Tên file | Section] (hoặc format tương ứng có trong Context).
-3. CONCISE: Trả lời ngắn gọn, đi thẳng vào trọng tâm (tối đa 2-3 câu). Không giải thích dông dài.
-4. ABSTAIN: Nếu Context không chứa đủ thông tin để trả lời, phải nói rõ: "Tôi không tìm thấy thông tin trong tài liệu."
-5. LANGUAGE MATCH: Luôn phản hồi bằng cùng ngôn ngữ với Câu hỏi.
+HƯỚNG DẪN CỐT LÕI:
+1. CHỈ DÙNG BẰNG CHỨNG (EVIDENCE-ONLY): Chỉ sử dụng các thông tin được nêu rõ trong Context. Tuyệt đối không tự bịa ra hoặc suy đoán thông tin.
+2. ĐỒNG BỘ NGÔN NGỮ (LANGUAGE MATCH): Bạn PHẢI phản hồi bằng đúng ngôn ngữ mà người dùng sử dụng trong câu hỏi.
+3. ĐỊNH DẠNG (FORMATTING): Trình bày câu trả lời rõ ràng. Sử dụng gạch đầu dòng (bullet points) khi có nhiều ý hoặc các bước. Giữ câu trả lời luôn ngắn gọn, súc tích.
+4. TRÍCH DẪN (CITATION): Luôn đính kèm chính xác Nguồn (Source) và Phần (Section) ở cuối mỗi thông tin được trích xuất.
+   - Yêu cầu: Lấy thông tin từ phần tiêu đề của tài liệu và sử dụng đúng định dạng [Source: <tên file> | Section: <tên section>].
 
-Question: {query}
+XỬ LÝ NGOẠI LỆ (ĐẶC BIỆT QUAN TRỌNG):
+- KHỚP MỘT PHẦN (PARTIAL MATCH): Nếu người dùng hỏi về một trường hợp/điều kiện cụ thể (VD: chức vụ đặc biệt, tình huống hiếm) không được nhắc đến trong tài liệu, hãy nêu rõ rằng tài liệu không quy định về trường hợp ngoại lệ này, sau đó cung cấp chính sách/quy định chung.
+- TỪ CHỐI & ĐIỀU HƯỚNG (ABSTAIN & ROUTE): Nếu context hoàn toàn không chứa thông tin để trả lời, hãy nói: "Tôi không tìm thấy thông tin trong tài liệu." Nếu câu hỏi liên quan đến một mã lỗi kỹ thuật hoặc sự cố hệ thống không có trong context, hãy hướng dẫn họ liên hệ với bộ phận IT Support/Helpdesk.
 
+VÍ DỤ VỀ CÁCH TRẢ LỜI CHUẨN:
+
+Question: Lỗi VPN-789-TIMEDOUT nghĩa là gì và làm sao để kết nối lại?
+Context: (Không có thông tin liên quan)
+Answer: Tôi không tìm thấy thông tin về mã lỗi VPN-789-TIMEDOUT trong tài liệu hiện tại. Đây có thể là lỗi kỹ thuật liên quan đến đường truyền mạng (VPN), vui lòng liên hệ trực tiếp bộ phận IT Helpdesk để được kiểm tra hệ thống.
+
+Question: Nhân viên thực tập (Intern) có được cấp Macbook Pro để code không?
 Context:
+Tài liệu 1:
+[Source: it-equipment-policy.pdf | Section: 2.1 | Date: 2026-02-15]
+Nhân viên chính thức (Full-time) sau khi qua thử việc sẽ được cấp 01 laptop Windows tiêu chuẩn để làm việc.
+Answer: Tài liệu không có quy định cụ thể về việc cấp phát thiết bị riêng cho nhân viên thực tập (Intern) hay cấp Macbook Pro. Theo quy định chung:
+- Nhân viên chính thức sau khi qua thử việc sẽ được cấp laptop Windows tiêu chuẩn. [Source: it-equipment-policy.pdf | Section: 2.1]
+
+---
+CONTEXT:
 {context_block}
 
-Answer:"""
+QUESTION: {query}
+ANSWER:"""
     return prompt
+
 
 
 def call_llm(prompt: str) -> str:
@@ -439,53 +458,6 @@ def call_llm(prompt: str) -> str:
 
     Choose Ollama by setting `OLLAMA_URL` and optional `OLLAMA_MODEL`.
     """
-    ollama_url = os.getenv("OLLAMA_URL")
-    if ollama_url:
-        import requests
-        ollama_model = os.getenv("OLLAMA_MODEL", LLM_MODEL)
-        payload = {
-            "model": ollama_model,
-            "prompt": prompt,
-        }
-        headers = {"Content-Type": "application/json"}
-        res = requests.post(f"{ollama_url.rstrip('/')}/api/generate", json=payload, headers=headers, timeout=60)
-        res.raise_for_status()
-        try:
-            data = res.json()
-            # Preferred: Ollama returns a 'result' list with items containing 'content'
-            if isinstance(data, dict) and "result" in data and isinstance(data["result"], list):
-                for item in data["result"]:
-                    if isinstance(item, dict) and "content" in item:
-                        return item["content"]
-            # Fallback: return text field or raw response body
-            if isinstance(data, dict) and "text" in data:
-                return data["text"]
-            return res.text
-        except ValueError:
-            return res.text
-    # If GOOGLE_API_KEY is set, use Google Gemini via google.generativeai
-    google_key = os.getenv("GOOGLE_API_KEY")
-    if google_key:
-        try:
-            # Initialize the modern client
-            client = genai.Client(api_key=google_key)
-            
-            # Get model name from env or default to latest flash
-            gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
-            
-            # Generate content
-            response = client.models.generate_content(
-                model=gemini_model,
-                contents=prompt
-            )
-            
-            # The new SDK uses .text directly and is much more stable
-            return response.text
-
-        except Exception as e:
-            return f"Error: {str(e)}"
-    
-    return "No API Key found."
 
     # Default: OpenAI
     from openai import OpenAI
@@ -670,18 +642,18 @@ if __name__ == "__main__":
             print(f"Lỗi: {e}")
 
     # Uncomment sau khi Sprint 3 hoàn thành:
-    # print("\n--- Sprint 3: So sánh strategies ---")
-    # compare_retrieval_strategies("Approval Matrix để cấp quyền là tài liệu nào?")
-    # compare_retrieval_strategies("ERR-403-AUTH")
+    print("\n--- Sprint 3: So sánh strategies ---")
+    compare_retrieval_strategies("Approval Matrix để cấp quyền là tài liệu nào?")
+    compare_retrieval_strategies("ERR-403-AUTH")
 
-    print("\n\nViệc cần làm Sprint 2:")
-    print("  1. Implement retrieve_dense() — query ChromaDB")
-    print("  2. Implement call_llm() — gọi OpenAI hoặc Gemini")
-    print("  3. Chạy rag_answer() với 3+ test queries")
-    print("  4. Verify: output có citation không? Câu không có docs → abstain không?")
+    # print("\n\nViệc cần làm Sprint 2:")
+    # print("  1. Implement retrieve_dense() — query ChromaDB")
+    # print("  2. Implement call_llm() — gọi OpenAI hoặc Gemini")
+    # print("  3. Chạy rag_answer() với 3+ test queries")
+    # print("  4. Verify: output có citation không? Câu không có docs → abstain không?")
 
-    print("\nViệc cần làm Sprint 3:")
-    print("  1. Chọn 1 trong 3 variants: hybrid, rerank, hoặc query transformation")
-    print("  2. Implement variant đó")
-    print("  3. Chạy compare_retrieval_strategies() để thấy sự khác biệt")
-    print("  4. Ghi lý do chọn biến đó vào docs/tuning-log.md")
+    # print("\nViệc cần làm Sprint 3:")
+    # print("  1. Chọn 1 trong 3 variants: hybrid, rerank, hoặc query transformation")
+    # print("  2. Implement variant đó")
+    # print("  3. Chạy compare_retrieval_strategies() để thấy sự khác biệt")
+    # print("  4. Ghi lý do chọn biến đó vào docs/tuning-log.md")

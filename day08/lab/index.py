@@ -20,7 +20,6 @@ import unicodedata
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
-from google import genai
 
 load_dotenv()
 
@@ -245,30 +244,7 @@ def get_embedding(text: str) -> List[float]:
     """
     Tạo embedding vector cho một đoạn text sử dụng OpenAI.
     """
-    # If Google Gemini API key is provided, use Gemini embeddings first
-    google_key = os.getenv("GOOGLE_API_KEY")
-    if google_key:
-        try:
-            client = genai.Client(api_key=google_key)
-            
-            # Use the newer, more efficient embedding model
-            model_name = os.getenv("GEMINI_EMBEDDING_MODEL", "gemini-embedding-001")
-            
-            # The modern call is simple and returns a clean object
-            result = client.models.embed_content(
-                model=model_name,
-                contents=text
-            )
-            
-            # Accessing the vector is now direct: result.embeddings[0].values
-            return result.embeddings[0].values
 
-        except Exception as e:
-            # Helpful for debugging your lab work
-            print(f"Embedding Error: {e}")
-            raise RuntimeError(f"Unable to parse embedding response: {e}")
-
-    # Fallback / default: OpenAI embeddings (kept as original)
     from openai import OpenAI
     client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
     response = client.embeddings.create(
