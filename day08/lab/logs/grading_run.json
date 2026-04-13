@@ -1,0 +1,118 @@
+[
+  {
+    "id": "gq01",
+    "question": "SLA xử lý ticket P1 đã thay đổi như thế nào so với phiên bản trước?",
+    "answer": "SLA xử lý ticket P1 đã thay đổi từ 6 giờ xuống 4 giờ so với phiên bản trước. [Source: support/sla-p1-2026.pdf | Section: Phần 5: Lịch sử phiên bản]",
+    "sources": [
+      "it/access-control-sop.md",
+      "support/sla-p1-2026.pdf"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:15:50.454085"
+  },
+  {
+    "id": "gq02",
+    "question": "Khi làm việc remote, tôi phải dùng VPN và được kết nối trên tối đa bao nhiêu thiết bị?",
+    "answer": "Khi làm việc remote, bạn phải sử dụng VPN để kết nối với hệ thống nội bộ. Mỗi tài khoản được kết nối VPN trên tối đa 2 thiết bị cùng lúc. [Source: support/helpdesk-faq.md | Section: Section 2: VPN và kết nối từ xa]",
+    "sources": [
+      "support/helpdesk-faq.md",
+      "hr/leave-policy-2026.pdf"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:15:53.495928"
+  },
+  {
+    "id": "gq03",
+    "question": "Đơn hàng mua trong chương trình Flash Sale và đã kích hoạt sản phẩm có được hoàn tiền không?",
+    "answer": "Đơn hàng mua trong chương trình Flash Sale và đã kích hoạt sản phẩm sẽ không được hoàn tiền. Theo quy định:\n- Đơn hàng đã áp dụng mã giảm giá đặc biệt theo chương trình khuyến mãi Flash Sale không được hoàn tiền.\n- Sản phẩm đã được kích hoạt hoặc đăng ký tài khoản cũng không được hoàn tiền. [Source: policy/refund-v4.pdf | Section: Điều 3: Điều kiện áp dụng và ngoại lệ]",
+    "sources": [
+      "policy/refund-v4.pdf"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:15:57.016281"
+  },
+  {
+    "id": "gq04",
+    "question": "Nếu chọn nhận store credit thay vì hoàn tiền, tôi được bao nhiêu phần trăm so với số tiền gốc?",
+    "answer": "Nếu bạn chọn nhận store credit thay vì hoàn tiền, bạn sẽ nhận được giá trị 110% so với số tiền hoàn. [Source: policy/refund-v4.pdf | Section: Điều 5: Hình thức hoàn tiền]",
+    "sources": [
+      "policy/refund-v4.pdf"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:15:59.905286"
+  },
+  {
+    "id": "gq05",
+    "question": "Contractor từ bên ngoài công ty có thể được cấp quyền Admin Access không? Nếu có, cần bao nhiêu ngày và có yêu cầu đặc biệt gì?",
+    "answer": "Tài liệu không quy định cụ thể về việc cấp quyền Admin Access cho Contractor từ bên ngoài công ty. Theo quy định chung về phân cấp quyền truy cập, quyền Admin Access (Level 4) chỉ áp dụng cho DevOps, SRE, và IT Admin. \n\n- Thời gian xử lý cấp quyền Admin Access là 5 ngày làm việc.\n- Yêu cầu thêm: Training bắt buộc về security policy. [Source: it/access-control-sop.md | Section: Section 4: Phân cấp quyền truy cập]",
+    "sources": [
+      "it/access-control-sop.md"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:16:03.855127"
+  },
+  {
+    "id": "gq06",
+    "question": "Lúc 2 giờ sáng xảy ra sự cố P1, on-call engineer cần cấp quyền tạm thời cho một engineer xử lý incident. Quy trình cụ thể như thế nào và quyền này tồn tại bao lâu?",
+    "answer": "Quy trình cụ thể để cấp quyền tạm thời cho một engineer xử lý sự cố P1 như sau:\n\n1. On-call IT Admin cần được Tech Lead phê duyệt bằng lời trước khi cấp quyền tạm thời.\n2. Quyền tạm thời này có thể tồn tại tối đa 24 giờ.\n3. Sau 24 giờ, phải có ticket chính thức hoặc quyền sẽ bị thu hồi tự động.\n4. Mọi quyền tạm thời phải được ghi log vào hệ thống Security Audit.\n\n[Source: it/access-control-sop.md | Section: Section 4: Escalation khi cần thay đổi quyền hệ thống]",
+    "sources": [
+      "it/access-control-sop.md",
+      "support/sla-p1-2026.pdf"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:16:09.966152"
+  },
+  {
+    "id": "gq07",
+    "question": "Công ty sẽ phạt bao nhiêu nếu team IT vi phạm cam kết SLA P1?",
+    "answer": "Tôi không tìm thấy thông tin về mức phạt nếu team IT vi phạm cam kết SLA P1 trong tài liệu hiện tại. Vui lòng tham khảo các quy định hoặc chính sách liên quan đến SLA trong công ty để biết thêm chi tiết.",
+    "sources": [
+      "support/helpdesk-faq.md",
+      "support/sla-p1-2026.pdf"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:16:14.078873"
+  },
+  {
+    "id": "gq08",
+    "question": "Nhân viên phải báo trước bao nhiêu ngày để xin nghỉ phép năm? Con số này có giống với số ngày cần giấy tờ khi nghỉ ốm không?",
+    "answer": "- Nhân viên phải gửi yêu cầu nghỉ phép năm qua hệ thống HR Portal ít nhất 3 ngày làm việc trước ngày nghỉ. [Source: hr/leave-policy-2026.pdf | Section: Phần 2: Quy trình xin nghỉ phép]\n- Số ngày cần giấy tờ khi nghỉ ốm là nếu nghỉ trên 3 ngày liên tiếp, cần có giấy tờ y tế từ bệnh viện. [Source: hr/leave-policy-2026.pdf | Section: Phần 1: Các loại nghỉ phép]\n\nVì vậy, con số này không giống nhau.",
+    "sources": [
+      "it/access-control-sop.md",
+      "hr/leave-policy-2026.pdf"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:16:19.514179"
+  },
+  {
+    "id": "gq09",
+    "question": "Mật khẩu tài khoản công ty cần đổi định kỳ không? Nếu có, hệ thống sẽ nhắc nhở trước bao nhiêu ngày và đổi qua đâu?",
+    "answer": "Có, mật khẩu tài khoản công ty cần được thay đổi định kỳ mỗi 90 ngày. Hệ thống sẽ nhắc nhở 7 ngày trước khi mật khẩu hết hạn. Người dùng có thể đổi mật khẩu qua portal SSO. [Source: support/helpdesk-faq.md | Section: Section 1: Tài khoản và mật khẩu]",
+    "sources": [
+      "support/helpdesk-faq.md",
+      "it/access-control-sop.md"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:16:22.531912"
+  },
+  {
+    "id": "gq10",
+    "question": "Chính sách hoàn tiền hiện tại áp dụng cho đơn hàng đặt trước ngày 01/02/2026 không?",
+    "answer": "Chính sách hoàn tiền hiện tại không áp dụng cho các đơn hàng đặt trước ngày 01/02/2026. Các đơn hàng này sẽ áp dụng theo chính sách hoàn tiền phiên bản 3. [Source: policy/refund-v4.pdf | Section: Điều 1: Phạm vi áp dụng]",
+    "sources": [
+      "policy/refund-v4.pdf"
+    ],
+    "chunks_retrieved": 3,
+    "retrieval_mode": "hybrid",
+    "timestamp": "2026-04-13T17:16:25.491325"
+  }
+]
