@@ -407,17 +407,48 @@ Answer:"""
 
 def call_llm(prompt: str) -> str:
     """
-    Gọi LLM để sinh câu trả lời sử dụng OpenAI.
+    Gọi LLM để sinh câu trả lời.
+
+    Supports:
+      - OpenAI (default) using `OPENAI_API_KEY`
+      - Ollama local server when `OLLAMA_URL` is set (e.g. http://localhost:11434).
+
+    Choose Ollama by setting `OLLAMA_URL` and optional `OLLAMA_MODEL`.
     """
-    from openai import OpenAI
-    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-    response = client.chat.completions.create(
-        model=LLM_MODEL,
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0,     # temperature=0 để output ổn định, dễ đánh giá
-        max_tokens=512,
-    )
-    return response.choices[0].message.content
+    ollama_url = os.getenv("OLLAMA_URL")
+    if ollama_url:
+        import requests
+        ollama_model = os.getenv("OLLAMA_MODEL", LLM_MODEL)
+        payload = {
+            "model": ollama_model,
+            "prompt": prompt,
+        }
+        headers = {"Content-Type": "application/json"}
+        res = requests.post(f"{ollama_url.rstrip('/')}/api/generate", json=payload, headers=headers, timeout=60)
+        res.raise_for_status()
+        try:
+            data = res.json()
+            # Preferred: Ollama returns a 'result' list with items containing 'content'
+            if isinstance(data, dict) and "result" in data and isinstance(data["result"], list):
+                for item in data["result"]:
+                    if isinstance(item, dict) and "content" in item:
+                        return item["content"]
+            # Fallback: return text field or raw response body
+            if isinstance(data, dict) and "text" in data:
+                return data["text"]
+            return res.text
+        except ValueError:
+            return res.text
+    else:
+        from openai import OpenAI
+        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+        response = client.chat.completions.create(
+            model=LLM_MODEL,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,     # temperature=0 để output ổn định, dễ đánh giá
+            max_tokens=512,
+        )
+        return response.choices[0].message.content
 
 
 def rag_answer(
@@ -535,14 +566,28 @@ def compare_retrieval_strategies(query: str) -> None:
     print(f"Query: {query}")
     print('='*60)
 
-    strategies = ["dense", "hybrid"]  # Thêm "sparse" sau khi implement
+    strategies = ["dense", "sparse", "hybrid"]
 
     for strategy in strategies:
         print(f"\n--- Strategy: {strategy} ---")
         try:
             result = rag_answer(query, retrieval_mode=strategy, verbose=False)
-            print(f"Answer: {result['answer']}")
-            print(f"Sources: {result['sources']}")
+            print(f"Answer: {result.get('answer')}")
+            print(f"Sources: {result.get('sources')}")
+
+            chunks = result.get('chunks_used', [])
+            if chunks:
+                print("Chunks used:")
+                for i, c in enumerate(chunks, 1):
+                    meta = c.get('metadata', {}) or {}
+                    source = meta.get('source', 'unknown')
+                    section = meta.get('section', '')
+                    score = c.get('score', 0)
+                    snippet = (c.get('text', '') or '')[:200].replace('\n', ' ')
+                    print(f"  [{i}] score={score:.3f} | {source} | {section} | {snippet}...")
+            else:
+                print("  (no chunks returned)")
+
         except NotImplementedError as e:
             print(f"Chưa implement: {e}")
         except Exception as e:
