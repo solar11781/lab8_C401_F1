@@ -260,8 +260,27 @@ def transform_query(query: str, strategy: str = "expansion") -> List[str]:
     - HyDE: query mơ hồ, search theo nghĩa không hiệu quả
     """
     # TODO Sprint 3: Implement query transformation
-    # Tạm thời trả về query gốc
-    return [query]
+    import json
+
+    if strategy == "expansion":
+        prompt = f"""Given the query: '{query}'
+        Generate 2-3 alternative phrasings or related terms in Vietnamese.
+        Output a JSON array of strings only, for example: ["alt1", "alt2"].
+        Do not add any extra explanation or text."""
+    elif strategy == "decomposition":
+        prompt = f"""Break down this complex query into 2-3 simpler sub-queries in Vietnamese: '{query}'
+        Output a JSON array of strings only, for example: ["sub1", "sub2"].
+        Do not add any extra explanation or text."""
+    elif strategy == "hyde":
+        prompt = f"""Generate a concise hypothetical supporting document or short answer for the query '{query}' in Vietnamese.
+        Treat the output as a short document suitable for embedding.
+        Output a JSON array with a single string (the hypothetical document), for example: ["..."]
+        Do not add any extra explanation or text."""
+    else:
+        raise ValueError(f"Unknown strategy: {strategy}")
+
+    response = call_llm(prompt)
+    return json.loads(response)
 
 
 # =============================================================================
