@@ -68,8 +68,7 @@
 | Query transform | Không | Không đổi (Tập trung tối ưu Retriever và Reranker trong Sprint này). |
 
 **Lý do chọn variant này:**
-> TODO: Giải thích tại sao chọn biến này để tune.
-> Ví dụ: "Chọn hybrid vì corpus có cả câu tự nhiên (policy) lẫn mã lỗi và tên chuyên ngành (SLA ticket P1, ERR-403)."
+
 > Chọn Hybrid Search (Dense + Sparse) vì tài liệu nội bộ chứa đựng ngôn ngữ tự nhiên lẫn các thuật ngữ chuyên môn. Dense Retrieval giúp bắt được ngữ nghĩa, trong khi Sparse Retrieval (BM25) có thể bắt được các keyword quan trọng mà embedding có thể bỏ qua. Reranking bằng Cross-encoder giúp cải thiện độ chính xác của kết quả cuối cùng bằng cách đánh giá lại mức độ liên quan của từng candidate dựa trên query cụ thể.
 
 > Bổ sung Cross-encoder vào pipeline giúp tăng khả năng phân biệt giữa các candidate có điểm embedding tương tự nhưng mức độ liên quan khác nhau. Điều này đặc biệt hữu ích khi top-k search trả về nhiều candidate có điểm số gần nhau, giúp cải thiện chất lượng câu trả lời cuối cùng.
@@ -120,7 +119,6 @@ Answer:
 
 ## 6. Diagram (tùy chọn)
 
-> TODO: Vẽ sơ đồ pipeline nếu có thời gian. Có thể dùng Mermaid hoặc drawio.
 
 ```mermaid
 graph LR
