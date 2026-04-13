@@ -110,9 +110,49 @@ def retrieve_sparse(query: str, top_k: int = TOP_K_SEARCH) -> List[Dict[str, Any
         top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
     """
     # TODO Sprint 3: Implement BM25 search
-    # Tạm thời return empty list
-    print("[retrieve_sparse] Chưa implement — Sprint 3")
-    return []
+    # Implement BM25 search over all chunks stored in ChromaDB.
+    from rank_bm25 import BM25Okapi
+    import chromadb
+    from index import CHROMA_DB_DIR
+    import re
+
+    # Load all chunks from the Chroma collection
+    client = chromadb.PersistentClient(path=str(CHROMA_DB_DIR))
+    collection = client.get_collection("rag_lab")
+
+    try:
+        results = collection.get(include=["documents", "metadatas"])
+    except Exception:
+        # Some chroma versions require explicit limit; try with a large limit as fallback
+        results = collection.get(limit=10000, include=["documents", "metadatas"])
+
+    docs = results.get("documents", [])
+    metadatas = results.get("metadatas", [])
+
+    if not docs:
+        return []
+
+    # Tokenize using simple word regex (better than split for punctuation)
+    tokenized_corpus = [re.findall(r"\w+", d.lower()) for d in docs]
+    bm25 = BM25Okapi(tokenized_corpus)
+
+    tokenized_query = re.findall(r"\w+", query.lower())
+    scores = bm25.get_scores(tokenized_query)
+
+    # Get top_k indices by score
+    top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
+
+    results_list: List[Dict[str, Any]] = []
+    for idx in top_indices:
+        score = float(scores[idx])
+        meta = metadatas[idx] if idx < len(metadatas) else {}
+        results_list.append({
+            "text": docs[idx],
+            "metadata": meta,
+            "score": score,
+        })
+
+    return results_list
 
 
 # =============================================================================
