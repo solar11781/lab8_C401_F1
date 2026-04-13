@@ -420,3 +420,4 @@ if __name__ == "__main__":
     print("  2. Implement phần TODO trong build_index()")
     print("  3. Chạy build_index() và kiểm tra với list_chunks()")
     print("  4. Nếu chunking chưa tốt: cải thiện _split_by_size() để split theo paragraph")
+  
