@@ -5,8 +5,9 @@
 | Tên | Vai trò | Email |
 |-----|---------|-------|
 | Lê Duy Anh | Tech Lead | leduyanh2k3@gmail.com |
-| Bùi Trần Gia Bảo, Lại Gia Khánh | Retrieval Owner | billxd04@gmail.com |
-| Trương Minh Sơn | Eval Owner | ___ |
+| Bùi Trần Gia Bảo | Retrieval Owner | billxd04@gmail.com |
+| Lại Gia Khánh | Retrieval Owner | laigiakhanh1211@gmail.com |
+| Trương Minh Sơn | Eval Owner | chokhon2004@gmail.com |
 | Mạc Phương Nga | Tester | mpnga03@gmail.com |
 | Nguyễn Phạm Trà My | Documentation Owner | ___ |
 
