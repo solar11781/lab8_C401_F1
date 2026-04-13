@@ -547,7 +547,7 @@ from rag_answer import rag_answer
 
 TEST_QUESTIONS_PATH = Path(__file__).parent / "data" / "test_questions.json"
 GRADING_QUESTIONS_PATH = Path(__file__).parent / "data" / "grading_questions.json"
-RESULTS_DIR = Path(__file__).parent / "results"
+RESULTS_DIR = Path(__file__).parent / "test_results"
 
 # Cấu hình baseline (Sprint 2)
 BASELINE_CONFIG = {
@@ -852,7 +852,7 @@ def run_scorecard(
     """
     if test_questions is None:
         try:
-            with open(GRADING_QUESTIONS_PATH, "r", encoding="utf-8") as f:
+            with open(TEST_QUESTIONS_PATH, "r", encoding="utf-8") as f:
                 test_questions = json.load(f)
         except Exception as e:
             print(f"❌ Lỗi khi load test questions: {e}")
@@ -1103,8 +1103,28 @@ import json
 from datetime import datetime
 from rag_answer import rag_answer
 import os
+#Grading logs
+# with open('data/grading_questions.json', 'r', encoding='utf-8') as f:
+#     questions = json.load(f)
 
-with open('data/grading_questions.json', 'r', encoding='utf-8') as f:
+# log = []
+# for q in questions:
+#     result = rag_answer(q["question"], retrieval_mode="hybrid", verbose=False)
+#     log.append({
+#         "id": q["id"],
+#         "question": q["question"],
+#         "answer": result["answer"],
+#         "sources": result["sources"],
+#         "chunks_retrieved": len(result["chunks_used"]),
+#         "retrieval_mode": result["config"]["retrieval_mode"],
+#         "timestamp": datetime.now().isoformat(),
+#     })
+# os.makedirs("logs", exist_ok=True)
+# with open("logs/grading_run.json", "w", encoding="utf-8") as f:
+#     json.dump(log, f, ensure_ascii=False, indent=2)
+
+#Test logs    
+with open('data/test_questions.json', 'r', encoding='utf-8') as f:
     questions = json.load(f)
 
 log = []
@@ -1120,7 +1140,7 @@ for q in questions:
         "timestamp": datetime.now().isoformat(),
     })
 os.makedirs("logs", exist_ok=True)
-with open("logs/grading_run.json", "w", encoding="utf-8") as f:
+with open("logs/test_run.json", "w", encoding="utf-8") as f:
     json.dump(log, f, ensure_ascii=False, indent=2)
 
 # =============================================================================
@@ -1133,9 +1153,9 @@ if __name__ == "__main__":
     print("=" * 70)
 
     # 1. Khởi tạo và kiểm tra dữ liệu đầu vào
-    print(f"\n🔍 Đang tải bộ câu hỏi kiểm thử: {GRADING_QUESTIONS_PATH}")
+    print(f"\n🔍 Đang tải bộ câu hỏi kiểm thử: {TEST_QUESTIONS_PATH}")
     try:
-        with open(GRADING_QUESTIONS_PATH, "r", encoding="utf-8") as f:
+        with open(TEST_QUESTIONS_PATH, "r", encoding="utf-8") as f:
             test_questions = json.load(f)
         
         num_q = len(test_questions)
@@ -1145,7 +1165,7 @@ if __name__ == "__main__":
         for q in test_questions[:3]:
             print(f"   • [{q['id']}] {q['question'][:60]}...")
     except FileNotFoundError:
-        print(f"❌ Lỗi: Không tìm thấy file tại {GRADING_QUESTIONS_PATH}. Vui lòng kiểm tra lại đường dẫn.")
+        print(f"❌ Lỗi: Không tìm thấy file tại {TEST_QUESTIONS_PATH}. Vui lòng kiểm tra lại đường dẫn.")
         test_questions = []
     except json.JSONDecodeError:
         print(f"❌ Lỗi: File JSON không đúng định dạng.")
