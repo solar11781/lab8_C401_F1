@@ -11,7 +11,7 @@
 **Config:**
 ```
 retrieval_mode = "dense"
-chunk_size = _400 tokens
+chunk_size = 400 tokens
 overlap = 80 tokens
 top_k_search = 10
 top_k_select = 3
