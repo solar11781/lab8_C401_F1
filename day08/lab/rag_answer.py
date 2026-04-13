@@ -104,9 +104,26 @@ def retrieve_sparse(query: str, top_k: int = TOP_K_SEARCH) -> List[Dict[str, Any
         top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
     """
     # TODO Sprint 3: Implement BM25 search
-    # Tạm thời return empty list
-    print("[retrieve_sparse] Chưa implement — Sprint 3")
-    return []
+    from rank_bm25 import BM25Okapi
+    import chromadb
+    from index import CHROMA_DB_DIR
+    import re
+
+    # Load all chunks from the Chroma collection
+    client = chromadb.PersistentClient(path=str(CHROMA_DB_DIR))
+    collection = client.get_collection("rag_lab")
+
+    try:
+        results = collection.get(include=["documents", "metadatas"])
+    except Exception:
+        # Some chroma versions require explicit limit; try with a large limit as fallback
+        results = collection.get(limit=10000, include=["documents", "metadatas"])
+
+    docs = results.get("documents", [])
+    metadatas = results.get("metadatas", [])
+
+    if not docs:
+        return []
 
 
 # =============================================================================
@@ -143,9 +160,76 @@ def retrieve_hybrid(
     - Query như "Approval Matrix" khi doc đổi tên thành "Access Control SOP"
     """
     # TODO Sprint 3: Implement hybrid RRF
-    # Tạm thời fallback về dense
-    print("[retrieve_hybrid] Chưa implement RRF — fallback về dense")
-    return retrieve_dense(query, top_k)
+    try:
+        dense_results = retrieve_dense(query, top_k=top_k) or []
+    except NotImplementedError:
+        dense_results = []
+    except Exception:
+        dense_results = []
+
+    try:
+        sparse_results = retrieve_sparse(query, top_k=top_k) or []
+    except NotImplementedError:
+        sparse_results = []
+    except Exception:
+        sparse_results = []
+
+    if not dense_results and not sparse_results:
+        return []
+
+    def _key_for_chunk(chunk: Dict[str, Any]) -> str:
+        meta = chunk.get("metadata", {}) or {}
+        source = meta.get("source", "")
+        text_snip = (chunk.get("text", "") or "")[:200]
+        return f"{source}||{text_snip}"
+
+    # Build map of candidate -> ranks
+    candidates: Dict[str, Dict[str, Any]] = {}
+
+    for i, c in enumerate(dense_results):
+        k = _key_for_chunk(c)
+        if k not in candidates:
+            candidates[k] = {
+                "text": c.get("text", ""),
+                "metadata": c.get("metadata", {}),
+                "dense_rank": i + 1,
+                "sparse_rank": None,
+            }
+        else:
+            candidates[k]["dense_rank"] = i + 1
+
+    for i, c in enumerate(sparse_results):
+        k = _key_for_chunk(c)
+        if k not in candidates:
+            candidates[k] = {
+                "text": c.get("text", ""),
+                "metadata": c.get("metadata", {}),
+                "dense_rank": None,
+                "sparse_rank": i + 1,
+            }
+        else:
+            candidates[k]["sparse_rank"] = i + 1
+
+    # Compute RRF score and collect
+    merged: List[Dict[str, Any]] = []
+    for v in candidates.values():
+        dr = v.get("dense_rank")
+        sr = v.get("sparse_rank")
+        score = 0.0
+        if dr:
+            score += dense_weight * (1.0 / (60.0 + float(dr)))
+        if sr:
+            score += sparse_weight * (1.0 / (60.0 + float(sr)))
+
+        merged.append({
+            "text": v.get("text", ""),
+            "metadata": v.get("metadata", {}),
+            "score": score,
+        })
+
+    # Sort by RRF score descending and return top_k
+    merged_sorted = sorted(merged, key=lambda x: x.get("score", 0.0), reverse=True)
+    return merged_sorted[:top_k]
 
 
 # =============================================================================
@@ -323,48 +407,17 @@ Answer:"""
 
 def call_llm(prompt: str) -> str:
     """
-    Gọi LLM để sinh câu trả lời.
-
-    Supports:
-      - OpenAI (default) using `OPENAI_API_KEY`
-      - Ollama local server when `OLLAMA_URL` is set (e.g. http://localhost:11434).
-
-    Choose Ollama by setting `OLLAMA_URL` and optional `OLLAMA_MODEL`.
+    Gọi LLM để sinh câu trả lời sử dụng OpenAI.
     """
-    ollama_url = os.getenv("OLLAMA_URL")
-    if ollama_url:
-        import requests
-        ollama_model = os.getenv("OLLAMA_MODEL", LLM_MODEL)
-        payload = {
-            "model": ollama_model,
-            "prompt": prompt,
-        }
-        headers = {"Content-Type": "application/json"}
-        res = requests.post(f"{ollama_url.rstrip('/')}/api/generate", json=payload, headers=headers, timeout=60)
-        res.raise_for_status()
-        try:
-            data = res.json()
-            # Preferred: Ollama returns a 'result' list with items containing 'content'
-            if isinstance(data, dict) and "result" in data and isinstance(data["result"], list):
-                for item in data["result"]:
-                    if isinstance(item, dict) and "content" in item:
-                        return item["content"]
-            # Fallback: return text field or raw response body
-            if isinstance(data, dict) and "text" in data:
-                return data["text"]
-            return res.text
-        except ValueError:
-            return res.text
-    else:
-        from openai import OpenAI
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        response = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0,     # temperature=0 để output ổn định, dễ đánh giá
-            max_tokens=512,
-        )
-        return response.choices[0].message.content
+    from openai import OpenAI
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model=LLM_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,     # temperature=0 để output ổn định, dễ đánh giá
+        max_tokens=512,
+    )
+    return response.choices[0].message.content
 
 
 def rag_answer(
