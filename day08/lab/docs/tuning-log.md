@@ -57,7 +57,6 @@ retrieval_mode = "hybrid"
 
 **Scorecard Variant 1:**
 | Metric | Baseline | Variant 1 | Delta |
-|--------|----------|-----------|-------|
 | Faithfulness | 4.5/5 | 4.3/5 | -0.2 |
 | Answer Relevance | 4.6/5 | 4.6/5 | 0 |
 | Context Recall | 5/5 | 5/5 | 0 |
