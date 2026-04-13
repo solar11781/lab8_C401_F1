@@ -28,16 +28,16 @@ llm_model = gpt-4o-mini
 | Completeness | 4 /5 |
 
 **Câu hỏi yếu nhất (điểm thấp):**
-> TODO: Liệt kê 2-3 câu hỏi có điểm thấp nhất và lý do tại sao.
-> Ví dụ: "q07 (Approval Matrix) - context recall = 1/5 vì dense bỏ lỡ alias."
+> q05 có điểm thấp nhất - completeness = 2/5 vì các kỹ thuật lọc nâng cao (Rerank) đã vô tình loại bỏ các "ý phụ" hoặc chi tiết ngoại lệ nằm ở các chunk xếp hạng thấp, dẫn đến việc mô hình trả lời rất trung thực nhưng lại bị thiếu thông tin bao quát so với đáp án chuẩn
+> q04 cũng có điểm thấp - faithfulness = 1/5 (do AI chấm điểm thấp)
 
 **Giả thuyết nguyên nhân (Error Tree):**
-- [ ] Indexing: Chunking cắt giữa điều khoản
+- [x] Indexing: Chunking cắt giữa điều khoản
 - [ ] Indexing: Metadata thiếu effective_date
-- [ ] Retrieval: Dense bỏ lỡ exact keyword / alias
+- [x] Retrieval: Dense bỏ lỡ exact keyword / alias
 - [ ] Retrieval: Top-k quá ít → thiếu evidence
 - [ ] Generation: Prompt không đủ grounding
-- [ ] Generation: Context quá dài → lost in the middle
+- [x] Generation: Context quá dài → lost in the middle
 
 ---
 
