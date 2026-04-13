@@ -25,6 +25,7 @@ import os
 from typing import List, Dict, Any, Optional, Tuple
 from dotenv import load_dotenv
 from sentence_transformers import CrossEncoder
+from google import genai
 
 load_dotenv()
 
@@ -439,16 +440,40 @@ def call_llm(prompt: str) -> str:
             return res.text
         except ValueError:
             return res.text
-    else:
-        from openai import OpenAI
-        client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
-        response = client.chat.completions.create(
-            model=LLM_MODEL,
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0,     # temperature=0 để output ổn định, dễ đánh giá
-            max_tokens=512,
-        )
-        return response.choices[0].message.content
+    # If GOOGLE_API_KEY is set, use Google Gemini via google.generativeai
+    google_key = os.getenv("GOOGLE_API_KEY")
+    if google_key:
+        try:
+            # Initialize the modern client
+            client = genai.Client(api_key=google_key)
+            
+            # Get model name from env or default to latest flash
+            gemini_model = os.getenv("GEMINI_MODEL", "gemini-2.0-flash")
+            
+            # Generate content
+            response = client.models.generate_content(
+                model=gemini_model,
+                contents=prompt
+            )
+            
+            # The new SDK uses .text directly and is much more stable
+            return response.text
+
+        except Exception as e:
+            return f"Error: {str(e)}"
+    
+    return "No API Key found."
+
+    # Default: OpenAI
+    from openai import OpenAI
+    client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+    response = client.chat.completions.create(
+        model=LLM_MODEL,
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0,     # temperature=0 để output ổn định, dễ đánh giá
+        max_tokens=512,
+    )
+    return response.choices[0].message.content
 
 
 def rag_answer(
