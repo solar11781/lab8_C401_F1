@@ -125,6 +125,29 @@ def retrieve_sparse(query: str, top_k: int = TOP_K_SEARCH) -> List[Dict[str, Any
     if not docs:
         return []
 
+    # Tokenize using simple word regex (better than split for punctuation)
+    tokenized_corpus = [re.findall(r"\w+", d.lower()) for d in docs]
+    bm25 = BM25Okapi(tokenized_corpus)
+
+    tokenized_query = re.findall(r"\w+", query.lower())
+    scores = bm25.get_scores(tokenized_query)
+
+    # Get top_k indices by score
+    top_indices = sorted(range(len(scores)), key=lambda i: scores[i], reverse=True)[:top_k]
+
+    results_list: List[Dict[str, Any]] = []
+    for idx in top_indices:
+        score = float(scores[idx])
+        meta = metadatas[idx] if idx < len(metadatas) else {}
+        results_list.append({
+            "text": docs[idx],
+            "metadata": meta,
+            "score": score,
+        })
+
+    return results_list
+
+
 
 # =============================================================================
 # RETRIEVAL — HYBRID (Dense + Sparse với Reciprocal Rank Fusion)
