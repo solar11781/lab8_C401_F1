@@ -16,6 +16,7 @@ Definition of Done Sprint 1:
 import os
 import json
 import re
+import unicodedata
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from dotenv import load_dotenv
