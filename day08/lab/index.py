@@ -91,16 +91,28 @@ def preprocess_document(raw_text: str, filepath: str) -> Dict[str, Any]:
                 # Dòng tên tài liệu (toàn chữ hoa) hoặc dòng trống
                 continue
             else:
-                # Hứng các dòng ghi chú/alias trước section (rất quan trọng)
+                # Hứng các dòng ghi chú/alias trước section
                 content_lines.append(line)
         else:
             content_lines.append(line)
 
     cleaned_text = "\n".join(content_lines)
 
-    # TODO: Thêm bước normalize text nếu cần
-    # Gợi ý: bỏ ký tự đặc biệt thừa, chuẩn hóa dấu câu
-    cleaned_text = re.sub(r"\n{3,}", "\n\n", cleaned_text)  # max 2 dòng trống liên tiếp
+    # NORMALIZE TEXT (Dựa trên phân tích thực tế từ 5 file data)
+    # 1. Chuẩn hóa Unicode tiếng Việt (NFC form): Bắt buộc cho tiếng Việt để hợp nhất mã byte.
+    cleaned_text = unicodedata.normalize('NFC', cleaned_text)
+    
+    # 2. Xóa khoảng trắng thừa:
+    cleaned_text = re.sub(r'[ \t]+', ' ', cleaned_text)
+    
+    # 3. Gom gọn các cụm dòng trống (Chỉ trong file có các khoảng ngắt khá lớn):
+    cleaned_text = re.sub(r"\n{3,}", "\n\n", cleaned_text)
+    
+    # 4. Chuẩn hóa Em-dash (—) thành Hyphen (-):
+    # Lý do: file access_control_sop.txt ghi "Level 1 — Read Only"
+    # còn hr_leave_policy.txt lại ghi "- Số ngày...". Việc đồng bộ sang dấu "-" 
+    # giúp query và parse dữ liệu không bị cấn ký tự lạ.
+    cleaned_text = cleaned_text.replace('—', '-')
 
     return {
         "text": cleaned_text,
