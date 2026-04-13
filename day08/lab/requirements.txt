@@ -16,4 +16,6 @@ rank-bm25>=0.2.2                 # BM25 keyword search
 # === Sprint 3: Rerank ===
 
 # === Utils ===
-tqdm>=4.66.0                     
+tqdm>=4.66.0                     # Progress bar khi index nhiều docs
+
+streamlit>=1.26.0                  # Web app framework 
